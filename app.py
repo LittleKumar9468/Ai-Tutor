@@ -1911,7 +1911,7 @@ def render_sidebar() -> None:
             """,
             unsafe_allow_html=True,
         )
-        st.markdown
+        st.markdown()
         navigation = [
             ("🏠  Learn Hub", "Home"),
             ("⚡  Quiz Arena", "Quiz"),
