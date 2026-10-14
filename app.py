@@ -101,331 +101,677 @@ SENDER_PASSWORD = get_setting("SENDER_PASSWORD")
 MODEL_NAME = get_setting("GEMINI_MODEL", "gemini-3.5-flash-lite")
 
 # -----------------------------------------------------------------------------
-# Theme: polished visual layer only; application functions remain unchanged.
+# Theme: vibrant multi-color visual layer + 3-line hamburger sidebar toggle.
 # -----------------------------------------------------------------------------
 st.markdown(
     """
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&display=swap');
 
       :root {
-        --falcon-primary: #315cf5;
-        --falcon-primary-dark: #2148d8;
-        --falcon-primary-soft: #edf2ff;
-        --falcon-ink: #17233d;
-        --falcon-muted: #65738b;
+        --falcon-violet: #6366f1;
+        --falcon-purple: #8b5cf6;
+        --falcon-pink: #ec4899;
+        --falcon-rose: #f43f5e;
+        --falcon-amber: #f59e0b;
+        --falcon-emerald: #10b981;
+        --falcon-cyan: #06b6d4;
+        --falcon-ink: #0f172a;
+        --falcon-muted: #475569;
         --falcon-border: #e2e8f0;
         --falcon-surface: #ffffff;
-        --falcon-canvas: #f5f7fc;
-        --falcon-teal: #13b8a6;
-        --falcon-radius: 18px;
-        --falcon-shadow: 0 10px 30px rgba(26, 43, 86, .07);
+        --falcon-radius: 20px;
       }
 
       html, body, [class*="css"] {
-        font-family: 'DM Sans', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       }
+
+      /* 1. TRANSPARENT TOP HEADER & HIDE ONLY RIGHT-SIDE SHARE/STAR/EDIT/DEPLOY ICONS */
+      header[data-testid="stHeader"] {
+        background: transparent !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+        border: none !important;
+        height: 3.2rem !important;
+      }
+      [data-testid="stToolbarActions"],
+      [data-testid="stAppDeployButton"],
+      .stAppDeployButton,
+      [data-testid="stMainMenu"],
+      #MainMenu,
+      [data-testid="stStatusWidget"],
+      [data-testid="stDecoration"],
+      footer {
+        display: none !important;
+        visibility: hidden !important;
+      }
+      /* Hide chain-link anchor icons next to headings */
+      [data-testid="stHeaderActionElements"],
+      h1 a, h2 a, h3 a, h4 a {
+        display: none !important;
+      }
+
+      /* 2. 3-LINE HAMBURGER BUTTON (☰) FOR OPENING & CLOSING SIDEBAR */
+      [data-testid="stSidebarCollapseButton"],
+      [data-testid="stExpandSidebarButton"],
+      [data-testid="collapsedControl"] {
+        opacity: 1 !important;
+        visibility: visible !important;
+        display: flex !important;
+        align-items: center !important;
+        z-index: 999999 !important;
+      }
+
+      button[data-testid="stExpandSidebarButton"],
+      [data-testid="collapsedControl"] button,
+      button[data-testid="stSidebarCollapseButton"],
+      [data-testid="stSidebarCollapseButton"] button {
+        width: 42px !important;
+        height: 42px !important;
+        min-width: 42px !important;
+        min-height: 42px !important;
+        border-radius: 12px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        padding: 0 !important;
+        transition: all 0.2s ease !important;
+      }
+
+      /* Hamburger style when sidebar is CLOSED (top-left of screen) */
+      button[data-testid="stExpandSidebarButton"],
+      [data-testid="collapsedControl"] button {
+        background: linear-gradient(135deg, #4f46e5 0%, #9333ea 55%, #ec4899 100%) !important;
+        border: 1.5px solid rgba(255, 255, 255, 0.45) !important;
+        box-shadow: 0 8px 22px rgba(147, 51, 234, 0.42) !important;
+        color: #ffffff !important;
+        margin-top: 0.35rem !important;
+        margin-left: 0.4rem !important;
+      }
+
+      /* Hamburger style when sidebar is OPEN (top-left inside sidebar) */
+      button[data-testid="stSidebarCollapseButton"],
+      [data-testid="stSidebarCollapseButton"] button {
+        background: rgba(255, 255, 255, 0.12) !important;
+        border: 1.5px solid rgba(255, 255, 255, 0.28) !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+      }
+
+      button[data-testid="stExpandSidebarButton"]:hover,
+      [data-testid="collapsedControl"] button:hover,
+      button[data-testid="stSidebarCollapseButton"]:hover,
+      [data-testid="stSidebarCollapseButton"] button:hover {
+        transform: scale(1.06) !important;
+        filter: brightness(1.12) !important;
+      }
+
+      /* Replace default arrow SVG with clean 3-line Hamburger icon ☰ */
+      button[data-testid="stExpandSidebarButton"] svg,
+      [data-testid="collapsedControl"] button svg,
+      button[data-testid="stSidebarCollapseButton"] svg,
+      [data-testid="stSidebarCollapseButton"] button svg,
+      button[data-testid="stExpandSidebarButton"] span,
+      [data-testid="stSidebarCollapseButton"] button span {
+        display: none !important;
+      }
+
+      button[data-testid="stExpandSidebarButton"]::after,
+      [data-testid="collapsedControl"] button::after,
+      button[data-testid="stSidebarCollapseButton"]::after,
+      [data-testid="stSidebarCollapseButton"] button::after {
+        content: "☰" !important;
+        font-size: 1.45rem !important;
+        font-weight: 900 !important;
+        line-height: 1 !important;
+        color: #ffffff !important;
+        display: block !important;
+      }
+
+      /* 3. MULTI-COLOR AURORA MESH BACKGROUND */
       .stApp {
         background:
-          radial-gradient(ellipse at 8% 0%, rgba(93, 128, 255, .10), transparent 32%),
-          radial-gradient(ellipse at 96% 6%, rgba(19, 184, 166, .07), transparent 27%),
-          var(--falcon-canvas);
+          radial-gradient(circle at 6% 8%, rgba(139, 92, 246, 0.14), transparent 32%),
+          radial-gradient(circle at 94% 10%, rgba(236, 72, 153, 0.12), transparent 30%),
+          radial-gradient(circle at 88% 88%, rgba(16, 185, 129, 0.12), transparent 34%),
+          radial-gradient(circle at 12% 85%, rgba(245, 158, 11, 0.11), transparent 30%),
+          linear-gradient(180deg, #f8faff 0%, #f1f5f9 100%);
         color: var(--falcon-ink);
       }
-      [data-testid="stHeader"] { background: rgba(245, 247, 252, .78); }
+
       [data-testid="stMainBlockContainer"] {
         width: 100%;
-        max-width: 1480px;
-        padding: 2rem clamp(1.2rem, 3vw, 3rem) 3.5rem;
+        max-width: 1440px;
+        padding: 3.1rem clamp(1.2rem, 2.8vw, 2.8rem) 3rem !important;
       }
       [data-testid="stAppViewContainer"] > .main { background: transparent; }
-      [data-testid="stVerticalBlock"] { gap: 1rem; }
+      [data-testid="stVerticalBlock"] { gap: 0.95rem; }
+
       h1, h2, h3, h4 {
-        font-family: 'Manrope', 'DM Sans', sans-serif;
+        font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
         color: var(--falcon-ink);
-        letter-spacing: -.035em;
+        letter-spacing: -0.03em;
         font-weight: 800;
       }
-      h1 { font-size: clamp(2rem, 3.1vw, 2.75rem); line-height: 1.15; }
-      h2 { font-size: clamp(1.45rem, 2.2vw, 1.9rem); line-height: 1.25; }
-      h3 { font-size: clamp(1.12rem, 1.7vw, 1.4rem); line-height: 1.3; }
-      p, li, label, [data-testid="stMarkdownContainer"] { color: #34425c; }
-      [data-testid="stCaptionContainer"], .stCaption { color: var(--falcon-muted); }
-      a { color: var(--falcon-primary); text-decoration-thickness: 1px; text-underline-offset: 3px; }
-      hr { border-color: #e2e8f0; margin: 1.5rem 0; }
+      h1 { font-size: clamp(1.95rem, 2.8vw, 2.65rem); line-height: 1.15; }
+      h2 { font-size: clamp(1.4rem, 2.1vw, 1.85rem); line-height: 1.25; }
+      h3 { font-size: clamp(1.12rem, 1.6vw, 1.35rem); line-height: 1.3; }
+      hr { border-color: rgba(148, 163, 184, 0.28); margin: 1.25rem 0; }
 
-      /* Sidebar / navigation */
+      /* 4. SLEEK COSMIC SIDEBAR WITH CUIMS-STYLE TOP HEADER BAR */
       [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #f9fbff 0%, #f0f4fc 100%);
-        border-right: 1px solid rgba(206, 216, 234, .85);
+        background:
+          radial-gradient(circle at 90% 10%, rgba(236, 72, 153, 0.22), transparent 35%),
+          radial-gradient(circle at 10% 85%, rgba(6, 182, 212, 0.20), transparent 40%),
+          linear-gradient(180deg, #0b0f19 0%, #17153b 52%, #1e1b4b 100%) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.14) !important;
       }
-      [data-testid="stSidebar"] > div:first-child { padding-top: 1.25rem; }
-      [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h3 {
-        font-size: 1.18rem; letter-spacing: -.03em;
+      /* Top header inside sidebar: [ ☰ ]  🎓 Falcon Students */
+      [data-testid="stSidebarHeader"] {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 0.75rem !important;
+        height: auto !important;
+        min-height: 3.8rem !important;
+        padding: 0.85rem 1rem 0.65rem 1rem !important;
+        margin: 0 !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
       }
-      [data-testid="stSidebar"] hr { margin: 1.2rem 0; }
-      [data-testid="stSidebar"] [data-testid="stCaptionContainer"] { font-size: .82rem; }
-      [data-testid="stSidebar"] div.stButton > button {
-        justify-content: flex-start;
-        text-align: left;
-        padding: .7rem .95rem;
-        min-height: 2.7rem;
-        border-radius: 12px;
-        font-weight: 600;
+      [data-testid="stLogoSpacer"] {
+        display: none !important;
+      }
+      [data-testid="stSidebarHeader"]::after {
+        content: "🎓 Falcon Students";
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.18rem;
+        font-weight: 900;
+        color: #ffffff;
+        letter-spacing: -0.02em;
+        white-space: nowrap;
+      }
+      [data-testid="stSidebarUserContent"] {
+        padding-top: 0.75rem !important;
+      }
+      [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+        gap: 0.55rem !important;
+      }
+      [data-testid="stSidebar"] hr {
+        border-color: rgba(255, 255, 255, 0.14) !important;
+        margin: 0.65rem 0 !important;
+      }
+      [data-testid="stSidebar"] p,
+      [data-testid="stSidebar"] label,
+      [data-testid="stSidebar"] span,
+      [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
+        color: #cbd5e1 !important;
       }
 
-      /* Buttons: coherent size, clear states, subtle motion */
-      div.stButton > button, div.stFormSubmitButton > button,
-      [data-testid="stDownloadButton"] button {
-        min-height: 2.75rem;
-        padding: .68rem 1.05rem;
-        border-radius: 12px;
-        font-weight: 700;
-        font-size: .93rem;
-        border: 1px solid #d9e1f0;
-        box-shadow: 0 2px 5px rgba(31, 52, 97, .035);
-        transition: transform .18s ease, box-shadow .18s ease,
-                    background .18s ease, border-color .18s ease;
+      /* Sidebar Navigation Buttons */
+      [data-testid="stSidebar"] div.stButton > button {
+        justify-content: flex-start !important;
+        text-align: left !important;
+        padding: 0.68rem 1rem !important;
+        min-height: 2.75rem !important;
+        border-radius: 13px !important;
+        font-weight: 700 !important;
+        font-size: 0.92rem !important;
+        transition: all 0.22s ease !important;
       }
-      div.stButton > button:hover, div.stFormSubmitButton > button:hover,
-      [data-testid="stDownloadButton"] button:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 8px 18px rgba(49, 92, 245, .12);
-        border-color: #aebff8;
+      /* Inactive Sidebar Buttons */
+      [data-testid="stSidebar"] div.stButton > button[kind="secondary"],
+      [data-testid="stSidebar"] div.stButton > button[data-testid="baseButton-secondary"] {
+        background: rgba(255, 255, 255, 0.07) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        color: #f1f5f9 !important;
+      }
+      [data-testid="stSidebar"] div.stButton > button[kind="secondary"] *,
+      [data-testid="stSidebar"] div.stButton > button[data-testid="baseButton-secondary"] * {
+        color: #f1f5f9 !important;
+      }
+      [data-testid="stSidebar"] div.stButton > button[kind="secondary"]:hover,
+      [data-testid="stSidebar"] div.stButton > button[data-testid="baseButton-secondary"]:hover {
+        background: rgba(255, 255, 255, 0.15) !important;
+        border-color: rgba(167, 139, 250, 0.55) !important;
+        transform: translateX(4px) !important;
+      }
+      /* Active Sidebar Button & Logout Button */
+      [data-testid="stSidebar"] div.stButton > button[kind="primary"],
+      [data-testid="stSidebar"] div.stButton > button[data-testid="baseButton-primary"] {
+        background: linear-gradient(135deg, #f43f5e 0%, #8b5cf6 55%, #06b6d4 100%) !important;
+        border: none !important;
+        color: #ffffff !important;
+        box-shadow: 0 8px 22px rgba(236, 72, 153, 0.35) !important;
+      }
+      [data-testid="stSidebar"] div.stButton > button[kind="primary"] *,
+      [data-testid="stSidebar"] div.stButton > button[data-testid="baseButton-primary"] * {
+        color: #ffffff !important;
+      }
+      /* Sidebar Selectbox & Slider */
+      [data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] > div {
+        background: rgba(15, 23, 42, 0.85) !important;
+        border-color: rgba(255, 255, 255, 0.18) !important;
+        color: #ffffff !important;
+      }
+      [data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] * {
+        color: #ffffff !important;
+      }
+
+      /* 5. MAIN BUTTONS: HIGH-CONTRAST WHITE TEXT & VIBRANT GRADIENTS */
+      div.stButton > button,
+      div.stFormSubmitButton > button,
+      [data-testid="stFormSubmitButton"] > button,
+      [data-testid="stDownloadButton"] > button {
+        min-height: 2.85rem !important;
+        padding: 0.7rem 1.25rem !important;
+        border-radius: 13px !important;
+        font-weight: 700 !important;
+        font-size: 0.95rem !important;
+        letter-spacing: 0.01em !important;
+        transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
       }
       div.stButton > button[kind="primary"],
-      div.stFormSubmitButton > button[kind="primary"],
-      [data-testid="stDownloadButton"] button[kind="primary"] {
-        color: #fff;
-        background: linear-gradient(135deg, #3868ff, #3155e8);
-        border-color: #315cf5;
+      div.stButton > button[data-testid="baseButton-primary"],
+      div.stFormSubmitButton > button,
+      [data-testid="stFormSubmitButton"] > button,
+      [data-testid="stDownloadButton"] > button {
+        background: linear-gradient(135deg, #4f46e5 0%, #9333ea 52%, #ec4899 100%) !important;
+        color: #ffffff !important;
+        border: none !important;
+        box-shadow: 0 10px 24px -6px rgba(147, 51, 234, 0.48) !important;
+      }
+      div.stButton > button[kind="primary"] *,
+      div.stButton > button[data-testid="baseButton-primary"] *,
+      div.stFormSubmitButton > button *,
+      [data-testid="stFormSubmitButton"] > button *,
+      [data-testid="stDownloadButton"] > button * {
+        color: #ffffff !important;
+        fill: #ffffff !important;
       }
       div.stButton > button[kind="primary"]:hover,
-      div.stFormSubmitButton > button[kind="primary"]:hover,
-      [data-testid="stDownloadButton"] button[kind="primary"]:hover {
-        color: #fff;
-        background: linear-gradient(135deg, #2d58ef, #2445cf);
-        border-color: #2445cf;
+      div.stButton > button[data-testid="baseButton-primary"]:hover,
+      div.stFormSubmitButton > button:hover,
+      [data-testid="stFormSubmitButton"] > button:hover,
+      [data-testid="stDownloadButton"] > button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 14px 28px -6px rgba(236, 72, 153, 0.58) !important;
+        filter: brightness(1.06) !important;
       }
-      button:focus-visible, input:focus-visible, textarea:focus-visible {
-        outline: 3px solid rgba(49, 92, 245, .25) !important;
-        outline-offset: 2px !important;
+      /* Main Area Secondary Buttons */
+      [data-testid="stMainBlockContainer"] div.stButton > button[kind="secondary"],
+      [data-testid="stMainBlockContainer"] div.stButton > button[data-testid="baseButton-secondary"] {
+        background: #ffffff !important;
+        color: #1e1b4b !important;
+        border: 1.5px solid #cbd5e1 !important;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05) !important;
+      }
+      [data-testid="stMainBlockContainer"] div.stButton > button[kind="secondary"] *,
+      [data-testid="stMainBlockContainer"] div.stButton > button[data-testid="baseButton-secondary"] * {
+        color: #1e1b4b !important;
+      }
+      [data-testid="stMainBlockContainer"] div.stButton > button[kind="secondary"]:hover,
+      [data-testid="stMainBlockContainer"] div.stButton > button[data-testid="baseButton-secondary"]:hover {
+        border-color: #8b5cf6 !important;
+        background: #f5f3ff !important;
+        transform: translateY(-2px) !important;
       }
 
-      /* Inputs / forms */
+      /* 6. FORMS, INPUTS & PILL RADIO TABS */
       [data-testid="stForm"] {
-        padding: clamp(1rem, 2vw, 1.6rem);
-        border: 1px solid rgba(213, 222, 238, .95);
-        border-radius: var(--falcon-radius);
-        background: rgba(255, 255, 255, .92);
-        box-shadow: var(--falcon-shadow);
+        padding: clamp(1.25rem, 2.2vw, 1.85rem) !important;
+        border: 1px solid rgba(139, 92, 246, 0.22) !important;
+        border-top: 4px solid #8b5cf6 !important;
+        border-radius: 22px !important;
+        background: rgba(255, 255, 255, 0.95) !important;
+        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08) !important;
+        backdrop-filter: blur(16px);
       }
       [data-testid="stTextInput"] input,
       [data-testid="stNumberInput"] input,
       [data-testid="stTextArea"] textarea,
-      [data-testid="stSelectbox"] [data-baseweb="select"] > div,
-      [data-testid="stMultiSelect"] [data-baseweb="select"] > div {
-        background: #f8faff;
-        border-color: #dbe3f1;
-        border-radius: 11px;
-        color: var(--falcon-ink);
-        transition: border-color .16s ease, box-shadow .16s ease;
+      [data-testid="stMainBlockContainer"] [data-testid="stSelectbox"] [data-baseweb="select"] > div {
+        background: #f8fafc !important;
+        border: 1.5px solid #cbd5e1 !important;
+        border-radius: 12px !important;
+        color: #0f172a !important;
+        font-weight: 500 !important;
+        transition: all 0.18s ease !important;
       }
-      [data-testid="stTextInput"] input,
-      [data-testid="stNumberInput"] input,
-      [data-testid="stTextArea"] textarea { padding-top: .72rem; padding-bottom: .72rem; }
       [data-testid="stTextInput"] input:focus,
       [data-testid="stNumberInput"] input:focus,
       [data-testid="stTextArea"] textarea:focus {
-        border-color: #7894ff;
-        box-shadow: 0 0 0 3px rgba(49, 92, 245, .10);
+        background: #ffffff !important;
+        border-color: #8b5cf6 !important;
+        box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15) !important;
       }
-      [data-testid="stTextInput"] label,
-      [data-testid="stTextArea"] label,
-      [data-testid="stSelectbox"] label,
-      [data-testid="stNumberInput"] label,
-      [data-testid="stRadio"] > label,
-      [data-testid="stSlider"] label,
-      [data-testid="stSelectSlider"] label {
-        color: #34425c;
-        font-size: .9rem;
-        font-weight: 700;
+      [data-testid="stMainBlockContainer"] [data-testid="stTextInput"] label,
+      [data-testid="stMainBlockContainer"] [data-testid="stTextArea"] label,
+      [data-testid="stMainBlockContainer"] [data-testid="stSelectbox"] label,
+      [data-testid="stMainBlockContainer"] [data-testid="stNumberInput"] label {
+        color: #1e293b !important;
+        font-size: 0.9rem !important;
+        font-weight: 700 !important;
       }
-      [data-testid="stRadio"] [role="radiogroup"] { gap: .45rem; }
-      [data-testid="stRadio"] label[data-baseweb="radio"] {
-        border-radius: 10px;
-        padding: .35rem .55rem;
-      }
-      [data-testid="stCheckbox"] label { color: #34425c; }
 
-      /* Cards, metrics, tables, expanders, alerts */
+      /* Pill-style Radio Switcher (Login / Sign Up / Forgot Password) */
+      [data-testid="stRadio"] [role="radiogroup"] {
+        background: #eef2ff;
+        padding: 0.35rem;
+        border-radius: 14px;
+        border: 1px solid #c7d2fe;
+        gap: 0.4rem !important;
+        display: inline-flex;
+      }
+      [data-testid="stRadio"] label[data-baseweb="radio"] {
+        border-radius: 10px !important;
+        padding: 0.45rem 0.95rem !important;
+        background: rgba(255, 255, 255, 0.75);
+        font-weight: 700 !important;
+        transition: all 0.18s ease;
+      }
+      [data-testid="stRadio"] label[data-baseweb="radio"]:hover {
+        background: #ffffff;
+      }
+
+      /* 7. MULTI-COLOR METRIC CARDS, CONTAINERS, EXPANDERS */
       [data-testid="stMetric"] {
-        background: linear-gradient(180deg, #fff 0%, #fbfcff 100%);
-        border: 1px solid #e2e8f3;
-        padding: 1.15rem 1.25rem;
-        border-radius: 16px;
-        box-shadow: 0 5px 18px rgba(31, 52, 97, .045);
-        transition: transform .18s ease, box-shadow .18s ease;
+        background: #ffffff !important;
+        border: 1px solid rgba(148, 163, 184, 0.25) !important;
+        border-top: 4px solid #8b5cf6 !important;
+        padding: 1.2rem 1.35rem !important;
+        border-radius: 18px !important;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06) !important;
+        transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+      }
+      [data-testid="column"]:nth-of-type(1) [data-testid="stMetric"] {
+        border-top-color: #8b5cf6 !important;
+        background: linear-gradient(180deg, #ffffff 0%, #f5f3ff 100%) !important;
+      }
+      [data-testid="column"]:nth-of-type(2) [data-testid="stMetric"] {
+        border-top-color: #10b981 !important;
+        background: linear-gradient(180deg, #ffffff 0%, #ecfdf5 100%) !important;
+      }
+      [data-testid="column"]:nth-of-type(3) [data-testid="stMetric"] {
+        border-top-color: #f59e0b !important;
+        background: linear-gradient(180deg, #ffffff 0%, #fffbeb 100%) !important;
+      }
+      [data-testid="column"]:nth-of-type(4) [data-testid="stMetric"] {
+        border-top-color: #ec4899 !important;
+        background: linear-gradient(180deg, #ffffff 0%, #fdf2f8 100%) !important;
       }
       [data-testid="stMetric"]:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 24px rgba(31, 52, 97, .08);
+        transform: translateY(-4px) !important;
+        box-shadow: 0 16px 34px rgba(99, 102, 241, 0.14) !important;
       }
-      [data-testid="stMetricLabel"] p { color: #687791; font-weight: 600; font-size: .84rem; }
-      [data-testid="stMetricValue"] { color: #17233d; font-weight: 800; letter-spacing: -.04em; }
-      [data-testid="stDataFrame"], [data-testid="stTable"] {
-        border: 1px solid #e2e8f3;
-        border-radius: 13px;
-        overflow: hidden;
+      [data-testid="stMetricLabel"] p {
+        color: #475569 !important;
+        font-weight: 700 !important;
+        font-size: 0.85rem !important;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
       }
+      [data-testid="stMetricValue"] {
+        color: #0f172a !important;
+        font-family: 'Outfit', sans-serif !important;
+        font-weight: 900 !important;
+        font-size: 2rem !important;
+      }
+
+      /* Bordered Containers */
+      [data-testid="stVerticalBlockBorderWrapper"] {
+        border-radius: 20px !important;
+        border: 1px solid rgba(148, 163, 184, 0.3) !important;
+        background: rgba(255, 255, 255, 0.92) !important;
+        box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06) !important;
+        padding: 1.25rem !important;
+        transition: transform 0.22s ease, box-shadow 0.22s ease !important;
+      }
+      [data-testid="stVerticalBlockBorderWrapper"]:hover {
+        box-shadow: 0 18px 40px rgba(99, 102, 241, 0.12) !important;
+      }
+
       [data-testid="stExpander"] {
-        border: 1px solid #e1e7f2;
-        border-radius: 14px;
-        background: rgba(255, 255, 255, .78);
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 16px !important;
+        background: #ffffff !important;
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04) !important;
         overflow: hidden;
       }
-      [data-testid="stExpander"] summary { padding: .75rem 1rem; font-weight: 700; }
-      [data-testid="stAlert"] { border-radius: 12px; border-width: 1px; }
+      [data-testid="stExpander"] summary {
+        padding: 0.85rem 1.1rem !important;
+        font-weight: 700 !important;
+        background: linear-gradient(90deg, #f8fafc, #f1f5f9);
+      }
       [data-testid="stProgressBar"] > div { border-radius: 99px; overflow: hidden; }
       [data-testid="stProgressBar"] > div > div {
-        background: linear-gradient(90deg, #315cf5, #13b8a6);
+        background: linear-gradient(90deg, #6366f1, #ec4899, #f59e0b, #10b981) !important;
         border-radius: 99px;
       }
       [data-testid="stChatMessage"] {
-        border: 1px solid #e4eaf4;
-        border-radius: 16px;
-        padding: .85rem 1rem;
-        background: rgba(255,255,255,.83);
-        margin-bottom: .65rem;
-      }
-      [data-testid="stChatInput"] textarea {
-        border-radius: 14px;
-        border-color: #dce4f2;
-        background: #fff;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 18px !important;
+        padding: 1rem 1.15rem !important;
+        background: #ffffff !important;
+        box-shadow: 0 6px 20px rgba(15, 23, 42, 0.04) !important;
+        margin-bottom: 0.75rem !important;
       }
 
-      /* Login hero panel: no application markup or event logic changed */
+      /* 8. LOGIN HERO PANEL (NETFLIX / COURSERA CINEMATIC SHOWCASE) */
       .falcon-brand-panel {
         position: relative;
         isolation: isolate;
         overflow: hidden;
-        padding: clamp(1.7rem, 3.2vw, 3rem);
-        min-height: 520px;
-        height: 100%;
+        padding: clamp(1.8rem, 3vw, 2.75rem);
+        min-height: 560px;
         color: #fff;
-        border: 1px solid rgba(161, 184, 255, .26);
-        border-radius: 26px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 28px;
         background:
-          radial-gradient(circle at 85% 8%, rgba(95, 135, 255, .35), transparent 30%),
-          radial-gradient(circle at 3% 94%, rgba(19, 184, 166, .18), transparent 33%),
-          linear-gradient(145deg, #101b35 0%, #172c52 50%, #1d3970 100%);
-        box-shadow: 0 25px 70px rgba(19, 35, 73, .20);
-        animation: falconFadeUp .65s ease both;
+          radial-gradient(circle at 88% 12%, rgba(236, 72, 153, 0.42), transparent 34%),
+          radial-gradient(circle at 12% 90%, rgba(6, 182, 212, 0.35), transparent 38%),
+          radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.25), transparent 50%),
+          linear-gradient(140deg, #090d16 0%, #17153b 45%, #2e1065 80%, #4c0519 100%);
+        box-shadow: 0 28px 75px rgba(15, 23, 42, 0.32);
+        animation: falconFadeUp 0.6s ease both;
       }
-      .falcon-brand-panel::before,
-      .falcon-brand-panel::after {
-        content: "";
-        position: absolute;
-        z-index: -1;
-        pointer-events: none;
-        border-radius: 50%;
-      }
-      .falcon-brand-panel::before {
-        width: 230px; height: 230px; right: -90px; top: 21%;
-        background: rgba(91, 130, 255, .14);
-        border: 1px solid rgba(180, 199, 255, .16);
-        box-shadow: 0 0 0 28px rgba(91,130,255,.035), 0 0 0 58px rgba(91,130,255,.025);
-        animation: falconFloat 8s ease-in-out infinite;
-      }
-      .falcon-brand-panel::after {
-        width: 90px; height: 90px; right: 17%; bottom: 7%;
-        background: linear-gradient(145deg, rgba(19,184,166,.28), rgba(91,130,255,.08));
-        filter: blur(1px);
-        animation: falconFloat 6s ease-in-out infinite reverse;
-      }
-      .falcon-brand-panel > * { position: relative; }
       .falcon-brand-panel h1 {
-        color: #fff;
-        font-family: 'Manrope', sans-serif;
-        font-weight: 800;
-        line-height: 1.12;
-        letter-spacing: -.045em;
-        margin-bottom: 1rem;
-        font-size: clamp(2.1rem, 3.15vw, 3.45rem);
+        color: #ffffff !important;
+        font-family: 'Outfit', sans-serif;
+        font-weight: 900;
+        line-height: 1.1;
+        letter-spacing: -0.04em;
+        margin: 1rem 0 0.85rem;
+        font-size: clamp(2.1rem, 3vw, 3.2rem);
       }
       .falcon-brand-panel .accent {
-        background: linear-gradient(90deg, #9dc4ff, #8ee9df);
-        color: #9dc4ff;
+        background: linear-gradient(90deg, #38bdf8 0%, #c084fc 38%, #f472b6 70%, #fbbf24 100%);
         -webkit-background-clip: text;
         background-clip: text;
         -webkit-text-fill-color: transparent;
       }
       .falcon-brand-panel .tagline {
-        color: #d4dff2;
+        color: #e2e8f0 !important;
         max-width: 34rem;
-        line-height: 1.75;
-        font-size: 1.02rem;
-        margin-bottom: 2rem;
+        line-height: 1.65;
+        font-size: 1rem;
+        margin-bottom: 1.35rem;
       }
-      .falcon-feature {
-        margin: .85rem 0;
-        padding: .95rem 1.05rem;
-        border: 1px solid rgba(255,255,255,.10);
-        border-left: 3px solid #69a0ff;
-        background: rgba(255,255,255,.065);
-        backdrop-filter: blur(9px);
-        border-radius: 0 13px 13px 0;
-        color: #f0f5ff;
-        line-height: 1.55;
-        transition: transform .2s ease, background .2s ease, border-color .2s ease;
-      }
-      .falcon-feature:hover {
-        transform: translateX(4px);
-        background: rgba(255,255,255,.105);
-        border-left-color: #6fe2d3;
-      }
-      .falcon-section-label {
-        color: var(--falcon-primary);
-        font-size: .77rem;
+      .falcon-badge-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.4rem 0.9rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        color: #fde047;
+        font-size: 0.76rem;
         font-weight: 800;
-        letter-spacing: .13em;
+        letter-spacing: 0.1em;
         text-transform: uppercase;
-        margin-bottom: .6rem;
+        backdrop-filter: blur(10px);
       }
-      .falcon-card-title { font-size: 1.08rem; font-weight: 800; color: var(--falcon-ink); }
+      .falcon-feature-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+        margin-top: 1rem;
+      }
+      .falcon-feature-card {
+        padding: 0.95rem 1rem;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        backdrop-filter: blur(12px);
+        transition: transform 0.22s ease, background 0.22s ease;
+      }
+      .falcon-feature-card:hover {
+        transform: translateY(-3px);
+        background: rgba(255, 255, 255, 0.14);
+      }
+      .falcon-feature-card.cyan { border-left: 4px solid #38bdf8; }
+      .falcon-feature-card.emerald { border-left: 4px solid #34d399; }
+      .falcon-feature-card.amber { border-left: 4px solid #fbbf24; }
+      .falcon-feature-card.rose { border-left: 4px solid #fb7185; }
+      .falcon-feature-card strong {
+        color: #ffffff;
+        font-size: 0.95rem;
+        display: block;
+        margin-bottom: 0.2rem;
+      }
+      .falcon-feature-card span {
+        color: #cbd5e1;
+        font-size: 0.82rem;
+        line-height: 1.45;
+      }
 
-      /* Entrance animation for page content */
-      [data-testid="stMainBlockContainer"] > div {
-        animation: falconFadeUp .38s ease both;
+      /* 9. DASHBOARD HERO BANNERS & CLASSROOM CARDS */
+      .falcon-hero-banner {
+        position: relative;
+        overflow: hidden;
+        padding: 1.85rem 2.2rem;
+        border-radius: 24px;
+        color: #ffffff;
+        margin-bottom: 1.2rem;
+        background:
+          radial-gradient(circle at 92% 15%, rgba(244, 63, 94, 0.42), transparent 36%),
+          radial-gradient(circle at 70% 90%, rgba(16, 185, 129, 0.30), transparent 40%),
+          linear-gradient(135deg, #0f172a 0%, #1e1b4b 48%, #3b0764 100%);
+        box-shadow: 0 20px 45px rgba(30, 27, 75, 0.22);
       }
+      .falcon-hero-banner h1 {
+        color: #ffffff !important;
+        margin: 0.35rem 0 0.45rem 0 !important;
+        font-size: clamp(1.85rem, 2.8vw, 2.5rem) !important;
+      }
+      .falcon-hero-banner p {
+        color: #e2e8f0 !important;
+        margin: 0 !important;
+        font-size: 1rem;
+        max-width: 44rem;
+      }
+      .falcon-hero-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+        margin-top: 1rem;
+      }
+      .falcon-chip {
+        padding: 0.32rem 0.8rem;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.13);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #f8fafc;
+      }
+
+      .falcon-class-banner {
+        padding: 1.2rem 1.25rem;
+        border-radius: 16px;
+        color: #ffffff;
+        margin-bottom: 0.9rem;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+      }
+      .falcon-class-banner.dsa {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 55%, #db2777 100%);
+      }
+      .falcon-class-banner.os {
+        background: linear-gradient(135deg, #059669 0%, #0d9488 55%, #0284c7 100%);
+      }
+      .falcon-class-banner.dbms {
+        background: linear-gradient(135deg, #ea580c 0%, #e11d48 55%, #9333ea 100%);
+      }
+      .falcon-class-tag {
+        display: inline-block;
+        padding: 0.22rem 0.65rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.22);
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.45rem;
+      }
+      .falcon-class-title {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.2rem;
+        font-weight: 800;
+        line-height: 1.3;
+        color: #ffffff;
+      }
+      .falcon-topic-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.38rem;
+        margin: 0.65rem 0 0.9rem;
+      }
+      .falcon-topic-pill {
+        font-size: 0.74rem;
+        font-weight: 700;
+        padding: 0.22rem 0.6rem;
+        border-radius: 8px;
+        background: #f1f5f9;
+        color: #334155;
+        border: 1px solid #e2e8f0;
+      }
+
+      /* Sidebar User Profile Card */
+      .falcon-sidebar-profile {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.28), rgba(236, 72, 153, 0.22));
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 14px;
+        padding: 0.65rem 0.85rem;
+        margin-bottom: 0.5rem;
+        color: #ffffff;
+      }
+      .falcon-sidebar-user {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        color: #e2e8f0;
+      }
+      .falcon-status-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #34d399;
+        box-shadow: 0 0 8px #34d399;
+        margin-right: 6px;
+      }
+
       @keyframes falconFadeUp {
         from { opacity: 0; transform: translateY(8px); }
         to { opacity: 1; transform: translateY(0); }
       }
-      @keyframes falconFloat {
-        0%, 100% { transform: translateY(0) rotate(0deg); }
-        50% { transform: translateY(-12px) rotate(4deg); }
-      }
 
-      /* Smaller screens */
       @media (max-width: 900px) {
-        [data-testid="stMainBlockContainer"] { padding: 1.25rem 1.1rem 2.5rem; }
-        .falcon-brand-panel { min-height: auto; padding: 1.6rem; margin-bottom: 1rem; }
-        .falcon-brand-panel h1 { font-size: clamp(2rem, 6vw, 2.7rem); }
-      }
-      @media (max-width: 560px) {
-        [data-testid="stMainBlockContainer"] { padding-left: .8rem; padding-right: .8rem; }
-        [data-testid="stMetric"] { padding: .85rem; }
-        div.stButton > button, div.stFormSubmitButton > button { width: 100%; }
-        .falcon-feature { padding: .8rem; }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        *, *::before, *::after {
-          animation-duration: .01ms !important;
-          animation-iteration-count: 1 !important;
-          transition-duration: .01ms !important;
-          scroll-behavior: auto !important;
-        }
+        .falcon-brand-panel { min-height: auto; padding: 1.5rem; margin-bottom: 1rem; }
+        .falcon-feature-grid { grid-template-columns: 1fr; }
       }
     </style>
     """,
@@ -705,6 +1051,8 @@ if GEMINI_API_KEY and modern_genai is not None:
         modern_client = modern_genai.Client(api_key=GEMINI_API_KEY)
     except Exception as exc:
         LOGGER.warning("Google GenAI client initialization failed: %s", type(exc).__name__)
+
+
 def generate_ai_text(prompt: str, *, json_mode: bool = False) -> str:
     if not GEMINI_API_KEY:
         raise RuntimeError("AI is not configured. Add GEMINI_API_KEY to .streamlit/secrets.toml or your environment variables.")
@@ -1303,36 +1651,62 @@ for subject in SUBJECTS:
 # Authentication UI
 # -----------------------------------------------------------------------------
 def render_auth_screen() -> None:
-    left, right = st.columns([1.03, 1], gap="large", vertical_alignment="center")
+    left, right = st.columns([1.08, 0.92], gap="large", vertical_alignment="center")
     with left:
         st.markdown(
             """
             <div class="falcon-brand-panel">
-              <div style="color:#93c5fd;font-weight:700;letter-spacing:.08em">FALCON STUDENTS</div>
-              <h1 style="margin-top:1.5rem;font-size:clamp(2rem,3.1vw,3.4rem)">Learn with clarity.<br><span class="accent">Grow with confidence.</span></h1>
-              <p class="tagline">A focused learning workspace for core Computer Science subjects.</p>
-              <div class="falcon-feature"><strong>AI Tutor</strong><br><span style="color:#d2deef">Get help with DSA, Operating Systems and DBMS.</span></div>
-              <div class="falcon-feature"><strong>Practice Quizzes</strong><br><span style="color:#d2deef">Track attempts, topic accuracy and XP.</span></div>
-              <div class="falcon-feature"><strong>Study Plans</strong><br><span style="color:#d2deef">Save your roadmap and mark tasks complete.</span></div>
+              <div class="falcon-badge-pill">🚀 FALCON STUDENTS · AI CS PLATFORM</div>
+              <h1>Master Computer Science.<br><span class="accent">Build Real Confidence.</span></h1>
+              <p class="tagline">Your all-in-one interactive studio for Data Structures, Operating Systems, DBMS, adaptive quizzes, and AI mock interviews.</p>
+              <div class="falcon-feature-grid">
+                <div class="falcon-feature-card cyan">
+                  <strong>🤖 24/7 AI Subject Tutor</strong>
+                  <span>Context-aware explanations tailored to your level & style for DSA, OS & DBMS.</span>
+                </div>
+                <div class="falcon-feature-card emerald">
+                  <strong>⚡ Adaptive XP Quizzes</strong>
+                  <span>Instant MCQ generation, topic-level accuracy analytics, and daily streaks.</span>
+                </div>
+                <div class="falcon-feature-card amber">
+                  <strong>🗺️ Smart Study Roadmaps</strong>
+                  <span>Day-by-day personalized plans with interactive MongoDB task tracking.</span>
+                </div>
+                <div class="falcon-feature-card rose">
+                  <strong>🎤 AI Mock Interviews</strong>
+                  <span>Practise technical rounds with 0–10 scoring, strengths, and model answers.</span>
+                </div>
+              </div>
+              <div class="falcon-hero-chips" style="margin-top:1.35rem;">
+                <span class="falcon-chip">✨ Gemini AI Powered</span>
+                <span class="falcon-chip">🔐 OTP Verified Security</span>
+                <span class="falcon-chip">📊 Live Analytics</span>
+              </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
-        st.caption("Falcon Students · AI-assisted learning workspace")
 
     with right:
-        st.markdown("## Welcome to Falcon Students")
-        st.write("Sign in or create an account to continue.")
+        st.markdown(
+            """
+            <div style="margin-bottom:0.6rem;">
+              <span style="display:inline-block;padding:0.28rem 0.75rem;border-radius:999px;background:linear-gradient(90deg,#ede9fe,#fce7f3);color:#6d28d9;font-weight:800;font-size:0.75rem;letter-spacing:0.08em;">STUDENT PORTAL</span>
+              <h2 style="margin:0.4rem 0 0.2rem 0;">Welcome to Falcon Students</h2>
+              <p style="color:#475569;margin:0 0 0.6rem 0;font-size:0.95rem;">Sign in or create your verified student account to continue.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
         st.radio("Account action", ("Login", "Sign Up", "Forgot Password"), horizontal=True, key="auth_view", label_visibility="collapsed")
-        st.divider()
         view = st.session_state["auth_view"]
 
         if view == "Login":
-            st.subheader("Login")
+            st.subheader("🔑 Login to Your Workspace")
             with st.form("login_form"):
                 email = st.text_input("Email", max_chars=254, key="login_email")
                 password = st.text_input("Password", type="password", max_chars=128, key="login_password")
-                submitted = st.form_submit_button("Login", type="primary", use_container_width=True)
+                submitted = st.form_submit_button("Login to Falcon Students →", type="primary", use_container_width=True)
             if submitted:
                 if not email.strip() or not password:
                     st.error("Enter both your email and password.")
@@ -1351,13 +1725,13 @@ def render_auth_screen() -> None:
         elif view == "Sign Up":
             state = st.session_state.get("signup_otp_state")
             if not isinstance(state, dict):
-                st.subheader("Create an account")
+                st.subheader("✨ Create a New Account")
                 with st.form("signup_form"):
                     name = st.text_input("Full name", max_chars=100)
                     email = st.text_input("Email", max_chars=254, key="signup_email")
                     password = st.text_input("Password (at least 8 characters)", type="password", max_chars=128)
                     confirm = st.text_input("Confirm password", type="password", max_chars=128)
-                    submitted = st.form_submit_button("Create account and send OTP", type="primary", use_container_width=True)
+                    submitted = st.form_submit_button("Create account and send OTP →", type="primary", use_container_width=True)
                 if submitted:
                     clean_name, clean_email = name.strip(), normalize_email(email)
                     if len(clean_name) < 2:
@@ -1384,7 +1758,7 @@ def render_auth_screen() -> None:
                         except PyMongoError:
                             st.error("Registration is temporarily unavailable. Check the database connection.")
             else:
-                st.subheader("Verify your email")
+                st.subheader("📧 Verify your email")
                 st.info(f"Enter the 6-digit code sent to {state['email']}. It expires in 5 minutes.")
                 st.caption(f"Attempts remaining: {state.get('attempts_left', 0)}")
                 with st.form("signup_verify_form"):
@@ -1432,10 +1806,10 @@ def render_auth_screen() -> None:
         else:  # Forgot Password
             state = st.session_state.get("forgot_otp_state")
             if not isinstance(state, dict):
-                st.subheader("Reset password")
+                st.subheader("🛡️ Reset password")
                 with st.form("forgot_request_form"):
                     email = st.text_input("Registered email", max_chars=254)
-                    submitted = st.form_submit_button("Send reset code", type="primary", use_container_width=True)
+                    submitted = st.form_submit_button("Send reset code →", type="primary", use_container_width=True)
                 if submitted:
                     clean_email = normalize_email(email)
                     if not validate_email(clean_email):
@@ -1524,38 +1898,67 @@ def render_auth_screen() -> None:
 # -----------------------------------------------------------------------------
 def render_sidebar() -> None:
     with st.sidebar:
-        st.markdown("### 🎓 Falcon Students")
-        st.caption(f"Signed in as **{st.session_state['user_name']}**")
-        st.divider()
+        user_name = st.session_state.get("user_name", "Student")
+        level_badge = st.session_state.get("student_level", LEVELS[0])
+        st.markdown(
+            f"""
+            <div class="falcon-sidebar-profile">
+              <div class="falcon-sidebar-user">
+                <span><span class="falcon-status-dot"></span><strong>{user_name}</strong></span>
+                <span style="background:rgba(255,255,255,0.16);padding:2px 8px;border-radius:99px;font-size:0.72rem;font-weight:700;">{level_badge}</span>
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.markdown("**🧭 NAVIGATION**")
         navigation = [
-            ("Learn", "Home"),
-            ("Quiz", "Quiz"),
-            ("Performance", "Performance"),
-            ("Revision Center", "Revision"),
-            ("Mock Interview", "MockInterview"),
-            ("Study Plan", "StudyPlan"),
+            ("🏠  Learn Hub", "Home"),
+            ("⚡  Quiz Arena", "Quiz"),
+            ("📊  Performance", "Performance"),
+            ("🧠  Revision Center", "Revision"),
+            ("🎤  Mock Interview", "MockInterview"),
+            ("🗺️  Study Plan", "StudyPlan"),
         ]
+        current_pg = st.session_state.get("current_page", "Home")
         for label, page in navigation:
-            if st.button(label, key=f"nav_{page}", use_container_width=True, type="primary" if st.session_state.get("current_page") == page else "secondary"):
+            is_active = (current_pg == page) or (page == "Home" and str(current_pg).startswith("Classroom_"))
+            if st.button(label, key=f"nav_{page}", use_container_width=True, type="primary" if is_active else "secondary"):
                 st.session_state["current_page"] = page
                 st.rerun()
         st.divider()
-        st.markdown("**Learning preferences**")
+        st.markdown("**⚙️ LEARNING PREFERENCES**")
         st.selectbox("Preferred style", LEARNING_STYLES, key="learning_style", on_change=save_preferences)
         st.select_slider("Current level", LEVELS, key="student_level", on_change=save_preferences)
-        st.caption("Preferences are saved to your profile.")
+        st.caption("Preferences sync automatically to your profile.")
         st.divider()
-        if st.button("Logout", type="primary", use_container_width=True):
+        if st.button("🚪 Logout", type="primary", use_container_width=True):
             logout()
             st.rerun()
 
 
 def render_home() -> None:
     email = st.session_state["user_email"]
-    st.markdown('<div class="falcon-section-label">YOUR LEARNING SPACE</div>', unsafe_allow_html=True)
     first_name = st.session_state["user_name"].split()[0]
-    st.title(f"Welcome, {first_name}")
-    st.write("Learn a concept, practise it, and use your progress to decide what to study next.")
+    style_now = st.session_state.get("learning_style", LEARNING_STYLES[0])
+    level_now = st.session_state.get("student_level", LEVELS[0])
+
+    st.markdown(
+        f"""
+        <div class="falcon-hero-banner">
+          <span class="falcon-badge-pill">✨ YOUR AI LEARNING COMMAND CENTER</span>
+          <h1>Welcome back, {first_name}! 👋</h1>
+          <p>Master core Computer Science concepts, test yourself with adaptive quizzes, and track your topic-by-topic accuracy in real time.</p>
+          <div class="falcon-hero-chips">
+            <span class="falcon-chip">🎯 Level: {level_now}</span>
+            <span class="falcon-chip">💡 Style: {style_now}</span>
+            <span class="falcon-chip">🔥 Subjects: DSA · OS · DBMS</span>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
     try:
         user = find_user_by_email(email) or {}
         topic_rows = get_topic_analytics(user)
@@ -1565,37 +1968,64 @@ def render_home() -> None:
         correct = sum(int(row["Correct"]) for row in topic_rows)
         accuracy = (correct / attempts * 100) if attempts else 0.0
         c1, c2, c3 = st.columns(3)
-        c1.metric("Total XP", f"{score}")
-        c2.metric("Quiz attempts", attempts)
-        c3.metric("Overall accuracy", f"{accuracy:.1f}%" if attempts else "—")
+        c1.metric("🏆 Total XP Earned", f"{score} XP")
+        c2.metric("📝 Quiz Attempts", attempts)
+        c3.metric("🎯 Overall Accuracy", f"{accuracy:.1f}%" if attempts else "—")
         with st.container(border=True):
-            st.markdown("**Recommended next step**")
+            st.markdown("#### 💡 Recommended Next Step")
             st.markdown(compute_recommendation(topic_rows))
             weak_topics = [row for row in topic_rows if row["Attempts"] >= 2 and row["Accuracy (%)"] < 60]
             if weak_topics:
                 best = sorted(weak_topics, key=lambda row: row["Accuracy (%)"])[0]
-                if st.button(f"Open {best['Subject']} tutor for {best['Topic']}", type="primary"):
+                if st.button(f"🚀 Open {best['Subject']} tutor for {best['Topic']}", type="primary"):
                     st.session_state["current_page"] = f"Classroom_{best['Subject']}"
                     st.session_state["prefill_tutor_topic"] = best["Topic"]
                     st.rerun()
     except PyMongoError:
         st.warning("Learning summary could not be loaded right now.")
 
-    st.subheader("Your classrooms")
+    st.subheader("🚀 Your Interactive Classrooms")
     columns = st.columns(3, gap="medium")
     descriptions = {
-        "DSA": ("Data Structures & Algorithms", "Arrays, sorting, searching, trees and problem-solving.", "#eaf2ff"),
-        "OS": ("Operating Systems", "Processes, scheduling, memory and concurrency.", "#eaf8f0"),
-        "DBMS": ("Database Management Systems", "SQL, database design, normalization and transactions.", "#fff8df"),
+        "DSA": (
+            "Data Structures & Algorithms",
+            "Arrays, sorting, searching, trees, graphs, and algorithmic problem-solving.",
+            "dsa",
+            "🧩",
+            ["Arrays", "Trees", "Graphs", "DP"],
+        ),
+        "OS": (
+            "Operating Systems",
+            "Process management, CPU scheduling, deadlocks, virtual memory, and concurrency.",
+            "os",
+            "⚙️",
+            ["Processes", "Scheduling", "Deadlocks", "Memory"],
+        ),
+        "DBMS": (
+            "Database Management Systems",
+            "Relational models, complex SQL queries, joins, normalization, and ACID transactions.",
+            "dbms",
+            "🗄️",
+            ["SQL Queries", "Joins", "Normalization", "Indexing"],
+        ),
     }
     for col, subject in zip(columns, SUBJECTS):
-        title, description, tint = descriptions[subject]
+        title, description, css_class, icon, sample_topics = descriptions[subject]
+        pills_html = "".join(f'<span class="falcon-topic-pill">{t}</span>' for t in sample_topics)
         with col:
             with st.container(border=True):
-                st.markdown(f'<div style="background:{tint};padding:.6rem .8rem;border-radius:10px;margin-bottom:.8rem;font-weight:700">{subject}</div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="falcon-card-title">{title}</div>', unsafe_allow_html=True)
-                st.write(description)
-                if st.button(f"Enter {subject} classroom", key=f"open_{subject}", use_container_width=True, type="primary"):
+                st.markdown(
+                    f"""
+                    <div class="falcon-class-banner {css_class}">
+                      <div class="falcon-class-tag">{icon} {subject} CLASSROOM</div>
+                      <div class="falcon-class-title">{title}</div>
+                    </div>
+                    <p style="color:#475569;font-size:0.92rem;min-height:2.8rem;margin-bottom:0.4rem;">{description}</p>
+                    <div class="falcon-topic-pills">{pills_html}</div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+                if st.button(f"Enter {subject} classroom →", key=f"open_{subject}", use_container_width=True, type="primary"):
                     st.session_state["current_page"] = f"Classroom_{subject}"
                     st.rerun()
 
@@ -1603,13 +2033,24 @@ def render_home() -> None:
 # Quiz screen: question generation, secure scoring and persisted topic analytics
 # -----------------------------------------------------------------------------
 def render_quiz() -> None:
-    st.title("Quiz practice")
-    st.write("Generate a subject-specific question. Correct answers earn 10 XP and update topic analytics.")
-    subject = st.selectbox("Subject", SUBJECTS, key="quiz_subject")
+    st.markdown(
+        """
+        <div class="falcon-hero-banner" style="background:linear-gradient(135deg,#311042 0%,#4f46e5 55%,#06b6d4 100%);">
+          <span class="falcon-badge-pill">⚡ ADAPTIVE ASSESSMENT</span>
+          <h1>Quiz Practice Arena</h1>
+          <p>Generate subject-specific MCQs tailored to your level. Every correct answer earns 10 XP and updates your live mastery profile.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    col_s, col_t = st.columns(2)
+    with col_s:
+        subject = st.selectbox("Subject", SUBJECTS, key="quiz_subject")
     topic_choices = ["Mixed practice"] + SUBJECT_TOPICS[subject]
-    topic = st.selectbox("Topic", topic_choices, key="quiz_topic")
+    with col_t:
+        topic = st.selectbox("Topic", topic_choices, key="quiz_topic")
     level = st.session_state.get("student_level", LEVELS[0])
-    if st.button("Generate question", type="primary"):
+    if st.button("✨ Generate question", type="primary"):
         topic_instruction = f"The topic must be exactly: {topic}." if topic != "Mixed practice" else f"Choose topic from this list only: {', '.join(SUBJECT_TOPICS[subject])}."
         prompt = f"""Create one high-quality multiple-choice question for a Computer Science student.
 Subject: {subject}
@@ -1638,7 +2079,7 @@ Rules: four non-empty options A-D, exactly one best answer, correct_answer must 
     if isinstance(quiz, dict):
         st.divider()
         with st.container(border=True):
-            st.caption(f"{quiz['subject']} · {quiz['topic']} · {quiz['difficulty']}")
+            st.caption(f"📌 {quiz['subject']} · {quiz['topic']} · {quiz['difficulty']}")
             st.markdown(f"### {quiz['question']}")
             for letter in "ABCD":
                 st.markdown(f"**{letter}.** {quiz['options'][letter]}")
@@ -1650,7 +2091,7 @@ Rules: four non-empty options A-D, exactly one best answer, correct_answer must 
                 disabled=bool(quiz.get("answered")),
             )
             if not quiz.get("answered"):
-                if st.button("Submit answer", type="primary", key="submit_quiz_answer"):
+                if st.button("Submit answer →", type="primary", key="submit_quiz_answer"):
                     if selected == "Select an answer":
                         st.warning("Select an answer before submitting.")
                     else:
@@ -1671,12 +2112,12 @@ Rules: four non-empty options A-D, exactly one best answer, correct_answer must 
                             st.error("Your attempt could not be saved. Check the database connection before retrying.")
             else:
                 if quiz.get("was_correct"):
-                    st.success("Correct answer. 10 XP awarded and the attempt saved.")
+                    st.success("🎉 Correct answer! 10 XP awarded and the attempt saved.")
                 else:
                     st.error(f"Incorrect. The correct answer was {quiz['correct_answer']}.")
                 st.markdown("**Explanation**")
                 st.write(quiz.get("explanation") or "Review the topic and try another question.")
-                if st.button("Generate another question", type="primary", key="another_question"):
+                if st.button("Generate another question →", type="primary", key="another_question"):
                     st.session_state["current_quiz"] = None
                     st.rerun()
 
@@ -1684,8 +2125,16 @@ Rules: four non-empty options A-D, exactly one best answer, correct_answer must 
 # Performance: persisted topic and subject analytics
 # -----------------------------------------------------------------------------
 def render_performance() -> None:
-    st.title("Learning performance")
-    st.write("Review all-time topic totals and your most recent quiz attempts.")
+    st.markdown(
+        """
+        <div class="falcon-hero-banner" style="background:linear-gradient(135deg,#064e3b 0%,#0f766e 52%,#2563eb 100%);">
+          <span class="falcon-badge-pill">📊 REAL-TIME TELEMETRY</span>
+          <h1>Learning Performance & Analytics</h1>
+          <p>Review your all-time subject mastery, topic-wise accuracy breakdown, and recent quiz history.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     try:
         user = find_user_by_email(st.session_state["user_email"]) or {}
         score = int(user.get("score", 0) or 0)
@@ -1698,11 +2147,11 @@ def render_performance() -> None:
     total_correct = sum(row["Correct"] for row in topic_rows)
     accuracy = total_correct / total_attempts * 100 if total_attempts else 0.0
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Total quiz XP", f"{score} XP")
-    c2.metric("Quiz attempts", total_attempts)
-    c3.metric("Correct answers", total_correct)
-    c4.metric("Overall accuracy", f"{accuracy:.1f}%" if total_attempts else "—")
-    st.progress(min(score / 100, 1.0), text=f"Progress to 100 XP · {min(score, 100)} / 100")
+    c1.metric("🏆 Total Quiz XP", f"{score} XP")
+    c2.metric("📝 Quiz Attempts", total_attempts)
+    c3.metric("✅ Correct Answers", total_correct)
+    c4.metric("🎯 Overall Accuracy", f"{accuracy:.1f}%" if total_attempts else "—")
+    st.progress(min(score / 100, 1.0), text=f"Progress to 100 XP Milestone · {min(score, 100)} / 100")
     st.caption("XP is accumulated over time. Topic analytics are all-time counters; the attempt table below keeps the latest 500 attempts.")
 
     st.subheader("Subject-wise performance")
@@ -1774,8 +2223,16 @@ def render_performance() -> None:
 # Phase 3 UI: Revision Center
 # -----------------------------------------------------------------------------
 def render_revision_center() -> None:
-    st.title("Smart Revision Center")
-    st.write("Use your quiz history to focus on weaker topics, generate revision notes, and track consistency.")
+    st.markdown(
+        """
+        <div class="falcon-hero-banner" style="background:linear-gradient(135deg,#7c2d12 0%,#be185d 52%,#6d28d9 100%);">
+          <span class="falcon-badge-pill">🧠 SMART RETENTION LAB</span>
+          <h1>Smart Revision Center</h1>
+          <p>Focus on weaker topics automatically, generate exam-ready revision notes, unlock achievements, and export your history.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     email = st.session_state["user_email"]
     try:
@@ -1793,10 +2250,10 @@ def render_revision_center() -> None:
     streak, active_days = get_learning_streak(history)
 
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Current quiz streak", f"{streak} day(s)")
-    m2.metric("Days practised", active_days)
-    m3.metric("Questions answered", total_attempts)
-    m4.metric("Overall accuracy", f"{accuracy:.1f}%" if total_attempts else "—")
+    m1.metric("🔥 Current Streak", f"{streak} day(s)")
+    m2.metric("📅 Days Practised", active_days)
+    m3.metric("❓ Questions Answered", total_attempts)
+    m4.metric("🎯 Overall Accuracy", f"{accuracy:.1f}%" if total_attempts else "—")
 
     st.subheader("Your next best revision")
     recommended = choose_revision_topic(topic_rows)
@@ -1813,15 +2270,18 @@ def render_revision_center() -> None:
     subjects = list(SUBJECTS)
     default_subject = recommended["Subject"] if recommended and recommended["Subject"] in subjects else "DSA"
     subject_index = subjects.index(default_subject)
-    subject = st.selectbox("Subject", subjects, index=subject_index, key="revision_subject")
+    col_rs, col_rt = st.columns(2)
+    with col_rs:
+        subject = st.selectbox("Subject", subjects, index=subject_index, key="revision_subject")
     topics = SUBJECT_TOPICS[subject]
     default_topic = recommended["Topic"] if recommended and recommended["Subject"] == subject and recommended["Topic"] in topics else topics[0]
     topic_index = topics.index(default_topic)
-    topic = st.selectbox("Topic", topics, index=topic_index, key="revision_topic")
+    with col_rt:
+        topic = st.selectbox("Topic", topics, index=topic_index, key="revision_topic")
     style = st.session_state.get("learning_style", LEARNING_STYLES[0])
     level = st.session_state.get("student_level", LEVELS[0])
 
-    if st.button("Generate revision notes", type="primary", key="generate_revision_notes"):
+    if st.button("📝 Generate revision notes", type="primary", key="generate_revision_notes"):
         prompt = f"""Create exam-ready revision notes for a Computer Science student.
 Subject: {subject}
 Topic: {topic}
@@ -1843,24 +2303,25 @@ Use clear headings and Markdown. Do not claim that code was executed."""
 
     saved_notes = st.session_state.get("revision_notes_result")
     if isinstance(saved_notes, dict) and saved_notes.get("notes"):
-        st.markdown(f"### {saved_notes.get('subject', '')} · {saved_notes.get('topic', '')}")
-        st.markdown(saved_notes["notes"])
-        safe_name = re.sub(r"[^a-zA-Z0-9_-]+", "_", f"{saved_notes.get('subject', 'revision')}_{saved_notes.get('topic', 'notes')}").strip("_").lower()
-        st.download_button(
-            "Download revision notes (.md)",
-            data=str(saved_notes["notes"]),
-            file_name=f"{safe_name or 'revision_notes'}.md",
-            mime="text/markdown",
-        )
+        with st.container(border=True):
+            st.markdown(f"### {saved_notes.get('subject', '')} · {saved_notes.get('topic', '')}")
+            st.markdown(saved_notes["notes"])
+            safe_name = re.sub(r"[^a-zA-Z0-9_-]+", "_", f"{saved_notes.get('subject', 'revision')}_{saved_notes.get('topic', 'notes')}").strip("_").lower()
+            st.download_button(
+                "⬇️ Download revision notes (.md)",
+                data=str(saved_notes["notes"]),
+                file_name=f"{safe_name or 'revision_notes'}.md",
+                mime="text/markdown",
+            )
 
-    if st.button("Practise this topic in Quiz", key="practice_revision_topic"):
+    if st.button("⚡ Practise this topic in Quiz", key="practice_revision_topic"):
         st.session_state["quiz_subject"] = subject
         st.session_state["quiz_topic"] = topic
         st.session_state["current_page"] = "Quiz"
         st.rerun()
 
     st.divider()
-    st.subheader("Achievements")
+    st.subheader("🏅 Achievements")
     achievement_rows = get_achievements(history, score, streak)
     unlocked = sum(1 for item in achievement_rows if item["unlocked"])
     st.caption(f"Unlocked: {unlocked} / {len(achievement_rows)}")
@@ -1868,15 +2329,16 @@ Use clear headings and Markdown. Do not claim that code was executed."""
     for index, item in enumerate(achievement_rows):
         with achievement_cols[index % 3]:
             with st.container(border=True):
-                st.markdown(f"**{'Unlocked' if item['unlocked'] else 'Locked'} · {item['name']}**")
+                badge_icon = "🏆 Unlocked" if item["unlocked"] else "🔒 Locked"
+                st.markdown(f"**{badge_icon} · {item['name']}**")
                 st.caption(item["description"])
 
     st.divider()
-    st.subheader("Export your quiz history")
+    st.subheader("📥 Export your quiz history")
     if history:
         export_df = build_quiz_export(history)
         st.download_button(
-            "Download quiz history (.csv)",
+            "⬇️ Download quiz history (.csv)",
             data=export_df.to_csv(index=False).encode("utf-8-sig"),
             file_name="falcon_students_quiz_history.csv",
             mime="text/csv",
@@ -1890,12 +2352,20 @@ Use clear headings and Markdown. Do not claim that code was executed."""
 # Study plans: structured plan stored in MongoDB with task completion
 # -----------------------------------------------------------------------------
 def render_study_plan() -> None:
-    st.title("Personalized study plans")
-    st.write("Generate a day-by-day plan, save it to your account, and mark tasks complete as you progress.")
+    st.markdown(
+        """
+        <div class="falcon-hero-banner" style="background:linear-gradient(135deg,#0f172a 0%,#0369a1 52%,#10b981 100%);">
+          <span class="falcon-badge-pill">🗺️ GOAL ROADMAP BUILDER</span>
+          <h1>Personalized Study Plans</h1>
+          <p>Generate a day-by-day CS roadmap, save it to your MongoDB account, and check off tasks as you complete them.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     with st.form("study_plan_form"):
         goal = st.text_input("What is your goal?", placeholder="For example: Prepare for technical interviews", max_chars=250)
         timeline = st.selectbox("How much time do you have?", ("1 Week", "2 Weeks", "1 Month"))
-        submitted = st.form_submit_button("Generate and save my roadmap", type="primary")
+        submitted = st.form_submit_button("✨ Generate and save my roadmap", type="primary")
     if submitted:
         clean_goal = goal.strip()
         if len(clean_goal) < 3:
@@ -1915,7 +2385,6 @@ Include exactly {days_count} day objects, in order. Each day has one short focus
                     plan_data = parse_study_plan(generate_ai_text(prompt, json_mode=True), clean_goal, timeline)
                     plan_id = create_study_plan(st.session_state["user_email"], clean_goal, timeline, plan_data)
                     st.session_state["active_plan_id"] = plan_id
-                    # This widget is declared below, so setting its state here is safe.
                     st.session_state["selected_saved_plan"] = plan_id
                     st.success("Your study plan has been saved to your account.")
                 except (RuntimeError, ValueError, json.JSONDecodeError) as exc:
@@ -1948,7 +2417,7 @@ Include exactly {days_count} day objects, in order. Each day has one short focus
     st.progress(percent / 100 if total else 0.0, text=f"Tasks completed: {done} / {total} ({percent:.0f}%)")
     st.caption("Task changes save automatically to MongoDB.")
     for day in plan.get("days", []):
-        with st.expander(f"Day {day.get('day', '?')} · {day.get('focus', 'Study tasks')}", expanded=False):
+        with st.expander(f"📅 Day {day.get('day', '?')} · {day.get('focus', 'Study tasks')}", expanded=False):
             for task in day.get("tasks", []):
                 widget_key = f"task_{plan['plan_id']}_{task['task_id']}"
                 initial = bool(task.get("completed"))
@@ -1969,16 +2438,21 @@ Include exactly {days_count} day objects, in order. Each day has one short focus
 # -----------------------------------------------------------------------------
 def render_mock_interview() -> None:
     email = st.session_state["user_email"]
-    st.title("Mock Interview Practice")
-    st.write(
-        "Practise technical interview questions, answer in your own words, "
-        "and receive feedback saved to your account."
+    st.markdown(
+        """
+        <div class="falcon-hero-banner" style="background:linear-gradient(135deg,#1e1b4b 0%,#7e22ce 52%,#e11d48 100%);">
+          <span class="falcon-badge-pill">🎤 AI INTERVIEW SIMULATOR</span>
+          <h1>Mock Interview Practice</h1>
+          <p>Practise 5-question technical interview rounds, answer in your own words, and get structured feedback with model solutions.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
     st.caption(
         "AI feedback is a learning aid, not a prediction of a real hiring decision."
     )
 
-    with st.expander("Start a new mock interview", expanded=not bool(st.session_state.get("active_mock_interview_id"))):
+    with st.expander("➕ Start a new mock interview", expanded=not bool(st.session_state.get("active_mock_interview_id"))):
         with st.form("mock_interview_start_form"):
             subject = st.selectbox("Subject", INTERVIEW_SUBJECTS)
             difficulty = st.selectbox(
@@ -1988,7 +2462,7 @@ def render_mock_interview() -> None:
                 if st.session_state.get("student_level", LEVELS[0]) in LEVELS else 0,
             )
             focus = st.selectbox("Interview focus", INTERVIEW_FOCI)
-            start = st.form_submit_button("Generate 5 interview questions", type="primary")
+            start = st.form_submit_button("🚀 Generate 5 interview questions", type="primary")
 
         if start:
             topic_list = (
@@ -2052,15 +2526,15 @@ Rules: produce exactly 5 distinct questions; avoid duplicate concepts; make ques
             if isinstance(q, dict) and isinstance(q.get("evaluation"), dict)
         )
         label = (
-            f"{session.get('subject', 'CS')} · {session.get('difficulty', '')} · "
+            f"**{session.get('subject', 'CS')}** · {session.get('difficulty', '')} · "
             f"{evaluated}/{len(qs)} evaluated · {date_label}"
         )
         left, right = st.columns([8, 1])
         with left:
-            st.write(label)
+            st.markdown(label)
         with right:
             if sid == active_id:
-                st.button("Open", key=f"open_mock_{sid}", disabled=True)
+                st.button("Active", key=f"open_mock_{sid}", disabled=True)
             elif st.button("Open", key=f"open_mock_{sid}"):
                 st.session_state["active_mock_interview_id"] = sid
                 st.rerun()
@@ -2113,7 +2587,7 @@ Rules: produce exactly 5 distinct questions; avoid duplicate concepts; make ques
     question = questions[question_index]
 
     with st.container(border=True):
-        st.caption(str(question.get("topic", "General")))
+        st.caption(f"📌 Topic: {question.get('topic', 'General')}")
         st.markdown(f"### {question.get('question', 'Question unavailable')}")
         evaluation = question.get("evaluation")
 
@@ -2128,14 +2602,14 @@ Rules: produce exactly 5 distinct questions; avoid duplicate concepts; make ques
             improvements = evaluation.get("improvements", [])
             col1, col2 = st.columns(2)
             with col1:
-                st.markdown("**What you did well**")
+                st.markdown("**✅ What you did well**")
                 if strengths:
                     for item in strengths:
                         st.markdown(f"- {item}")
                 else:
                     st.write("Keep practising clear, structured explanations.")
             with col2:
-                st.markdown("**What to improve**")
+                st.markdown("**🔧 What to improve**")
                 if improvements:
                     for item in improvements:
                         st.markdown(f"- {item}")
@@ -2143,7 +2617,7 @@ Rules: produce exactly 5 distinct questions; avoid duplicate concepts; make ques
                     st.write("Add a precise example or explain the reasoning step by step.")
 
             if evaluation.get("model_answer"):
-                with st.expander("Review a sample answer"):
+                with st.expander("📖 Review a sample answer"):
                     st.markdown(evaluation["model_answer"])
         else:
             answer_key = f"mock_answer_{active_id}_{question_index}"
@@ -2157,7 +2631,7 @@ Rules: produce exactly 5 distinct questions; avoid duplicate concepts; make ques
                     height=180,
                     key=f"mock_answer_input_{active_id}_{question_index}",
                 )
-                evaluate = st.form_submit_button("Evaluate my answer", type="primary")
+                evaluate = st.form_submit_button("✨ Evaluate my answer", type="primary")
 
             if evaluate:
                 if len(answer.strip()) < 2:
@@ -2193,14 +2667,22 @@ Rules: produce exactly 5 distinct questions; avoid duplicate concepts; make ques
 # AI classroom with conversation context passed to the model
 # -----------------------------------------------------------------------------
 def render_classroom(subject: str) -> None:
-    header, back = st.columns([8, 1])
+    header, back = st.columns([8, 1.2], vertical_alignment="center")
     with header:
-        st.title(f"{subject} AI Tutor")
+        st.markdown(
+            f"""
+            <div class="falcon-hero-banner" style="padding:1.35rem 1.8rem;margin-bottom:0.6rem;">
+              <span class="falcon-badge-pill">🤖 INTERACTIVE AI CLASSROOM</span>
+              <h1 style="margin:0.25rem 0 0.2rem 0 !important;">{subject} AI Tutor</h1>
+              <p>The tutor uses your recent conversation history in {subject} to answer follow-up questions with clarity.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
     with back:
-        if st.button("Back", use_container_width=True):
+        if st.button("← Back", use_container_width=True, type="secondary"):
             st.session_state["current_page"] = "Home"
             st.rerun()
-    st.caption("The tutor uses recent messages from this subject to answer follow-up questions.")
     style = st.session_state.get("learning_style", LEARNING_STYLES[0])
     level = st.session_state.get("student_level", LEVELS[0])
     key = f"messages_{subject}"
