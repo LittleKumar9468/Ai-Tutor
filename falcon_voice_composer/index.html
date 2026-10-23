@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#10233f;background:transparent}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:transparent;overflow:hidden}
+.composer{width:100%;border:1px solid #cbd8e8;background:#fff;border-radius:15px;box-shadow:0 3px 12px rgba(15,39,74,.055);overflow:hidden;transition:border-color .15s,box-shadow .15s}
+.composer:focus-within{border-color:#1d63dc;box-shadow:0 0 0 3px rgba(29,99,220,.1)}
+textarea{display:block;width:100%;min-height:92px;max-height:180px;resize:vertical;padding:13px 15px 11px;border:0;outline:0;background:transparent;color:#10233f;font-family:inherit;font-size:15px;font-weight:500;line-height:1.55;overflow-y:auto}
+textarea::placeholder{color:#8ca0b8}
+.toolbar{display:flex;align-items:center;gap:8px;padding:8px 10px;border-top:1px solid #e7eef7;background:linear-gradient(180deg,#fff,#f8fbff);min-width:0}
+.helper{flex:1;min-width:45px;font-size:12px;line-height:1.4;color:#647a95;overflow-wrap:anywhere}
+button{border:1px solid #cbd8e8;border-radius:10px;background:#fff;color:#243c5a;min-height:38px;padding:8px 12px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;transition:background .15s,border-color .15s,transform .15s}
+button:hover{border-color:#7fa7e1;background:#f2f7ff}
+button:disabled{opacity:.58;cursor:wait}
+.mic{width:40px;min-width:40px;padding:8px;background:#eef5ff;border-color:#d6e6fb;color:#1d63dc}
+.mic.recording{background:#e8f0fc;border-color:#9ab8e8;color:#0b1628;animation:pulse 1.2s infinite}
+.send{background:#1d63dc;border-color:#1d63dc;color:#fff;padding:8px 13px;flex:none}
+.send:hover{background:#1550b8;border-color:#1550b8;color:#fff}
+.mic svg,.send svg{width:17px;height:17px;display:block;flex:none}
+.record-row{display:none;padding:8px 13px 10px;gap:10px;align-items:center;background:#f4f8ff;border-top:1px solid #e4edf9;min-width:0}
+.record-row.active{display:flex}
+.dot{width:8px;height:8px;border-radius:100%;background:#0b1628;flex:none}
+.record-label{font-size:12px;font-weight:750;color:#17365f;white-space:nowrap}
+.wave{height:27px;flex:1;min-width:0;width:100%}
+.duration{font-family:ui-monospace,monospace;font-size:12px;color:#526986;white-space:nowrap}
+.status{padding:0 13px 9px;color:#647a95;font-size:12px;display:none;line-height:1.4}
+.status.visible{display:block}
+.send-status{display:none;flex:none;color:#1d63dc;font-size:11px;font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums}
+.send-status.visible{display:inline-flex;align-items:center;gap:5px}
+.send-status:before{content:"";width:6px;height:6px;border-radius:50%;background:#1d63dc;animation:blink 1s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(11,22,40,.12)}50%{box-shadow:0 0 0 5px rgba(11,22,40,.07)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+@media(max-width:540px){.toolbar{gap:6px;padding:7px;flex-wrap:wrap}.helper{flex:1 1 calc(100% - 52px)}.send-status{margin-left:auto}.send{padding:8px 10px}.record-label{font-size:11px}}
+</style>
+</head>
+<body>
+<div class="composer" id="composer">
+  <textarea id="answer" maxlength="3000" placeholder="Write a structured answer..." aria-label="Your interview answer"></textarea>
+  <div id="recordRow" class="record-row">
+    <span class="dot"></span><span class="record-label" id="recordLabel">Recording</span>
+    <canvas id="wave" class="wave" aria-label="Live recording waveform"></canvas>
+    <span id="duration" class="duration">00:00</span>
+  </div>
+  <div id="status" class="status" role="status" aria-live="polite"></div>
+  <div class="toolbar">
+    <button class="mic" id="mic" title="Start or stop recording" aria-label="Start voice recording">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"></rect><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"></path></svg>
+    </button>
+    <div class="helper" id="helper">Type your answer, or tap the microphone to speak.</div>
+    <span class="send-status" id="sendStatus" aria-live="polite"></span>
+    <button class="send" id="send">
+      Send answer
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path></svg>
+    </button>
+  </div>
+</div>
+<script>
+(() => {
+  const composer = document.getElementById('composer');
+  const answer = document.getElementById('answer');
+  const mic = document.getElementById('mic');
+  const send = document.getElementById('send');
+  const row = document.getElementById('recordRow');
+  const label = document.getElementById('recordLabel');
+  const duration = document.getElementById('duration');
+  const canvas = document.getElementById('wave');
+  const ctx = canvas.getContext('2d');
+  const status = document.getElementById('status');
+  const helper = document.getElementById('helper');
+  const sendStatus = document.getElementById('sendStatus');
+
+  let mediaStream = null, mediaRecorder = null, chunks = [], audioBlob = null, audioMime = 'audio/webm';
+  let audioContext = null, analyser = null, raf = 0, startedAt = 0, durationTimer = 0;
+  let isRecording = false, pendingAutoSend = false, isSending = false, streamlitArgs = {};
+  let eventCounter = 0, activeEventId = '', sendStartedAt = 0, sendTimer = 0, completedEventId = '';
+
+  function post(type, extra={}) {
+    window.parent.postMessage({isStreamlitMessage:true, type, ...extra}, '*');
+  }
+  function setStatus(message) {
+    status.textContent = message || '';
+    status.classList.toggle('visible', Boolean(message));
+    setHeight();
+  }
+  function fmtTime(sec) {
+    const s = Math.max(0, Math.floor(sec));
+    return String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
+  }
+  // Measure the component's own content, never the document viewport. Measuring scrollHeight
+  // here can feed the iframe's previous height back into itself and cause endless growth.
+  function autoResizeAnswer() {
+    answer.style.height = 'auto';
+    answer.style.height = Math.min(180, Math.max(92, answer.scrollHeight)) + 'px';
+  }
+  function setHeight() {
+    requestAnimationFrame(() => {
+      autoResizeAnswer();
+      const contentHeight = Math.ceil(composer.getBoundingClientRect().height + 2);
+      post('streamlit:setFrameHeight', {height: Math.max(132, contentHeight)});
+    });
+  }
+  function drawIdleWave() {
+    const dpr = window.devicePixelRatio || 1;
+    const width = Math.max(120, canvas.clientWidth || 240);
+    const height = Math.max(20, canvas.clientHeight || 27);
+    canvas.width = Math.floor(width*dpr); canvas.height = Math.floor(height*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,width,height);
+    ctx.strokeStyle = '#b9cbea'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+    const mid = height/2;
+    for (let x=3; x<width; x+=7) {
+      const h = 3 + 4*Math.abs(Math.sin(x*0.13));
+      ctx.beginPath(); ctx.moveTo(x,mid-h/2); ctx.lineTo(x,mid+h/2); ctx.stroke();
+    }
+  }
+  function drawWave() {
+    if (!analyser || !isRecording) return;
+    const width = Math.max(120, canvas.clientWidth || 240), height = Math.max(20,canvas.clientHeight||27);
+    const dpr = window.devicePixelRatio || 1;
+    if (canvas.width !== Math.floor(width*dpr) || canvas.height !== Math.floor(height*dpr)) {
+      canvas.width=Math.floor(width*dpr); canvas.height=Math.floor(height*dpr);
+    }
+    ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,width,height);
+    const data = new Uint8Array(analyser.fftSize); analyser.getByteTimeDomainData(data);
+    ctx.strokeStyle='#1d63dc'; ctx.lineWidth=2; ctx.lineCap='round'; ctx.beginPath();
+    const step=width/data.length;
+    for(let i=0;i<data.length;i++) {
+      const x=i*step, y=(data[i]/255)*height;
+      if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke(); raf=requestAnimationFrame(drawWave);
+  }
+  function stopTracks() {
+    if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+    mediaStream = null;
+    if (audioContext) { audioContext.close().catch(()=>{}); audioContext = null; }
+    analyser = null;
+    if (raf) cancelAnimationFrame(raf);
+    raf = 0;
+    clearInterval(durationTimer); durationTimer = 0;
+  }
+  function setRecordingButton(recording) {
+    mic.classList.toggle('recording', recording);
+    mic.setAttribute('aria-label', recording ? 'Stop recording' : 'Start voice recording');
+    mic.title = recording ? 'Stop recording' : 'Start voice recording';
+    mic.innerHTML = recording
+      ? '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"></rect><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"></path></svg>';
+  }
+  function stopSendTimer() {
+    clearInterval(sendTimer); sendTimer = 0;
+    sendStatus.textContent = ''; sendStatus.classList.remove('visible');
+  }
+  function startSendTimer() {
+    sendStartedAt = Date.now();
+    sendStatus.classList.add('visible');
+    const update = () => { sendStatus.textContent = 'Sending to AI · ' + fmtTime((Date.now()-sendStartedAt)/1000); };
+    update(); clearInterval(sendTimer); sendTimer = setInterval(update, 250);
+  }
+  function lockForSending() {
+    isSending = true; send.disabled = true; mic.disabled = true;
+    send.innerHTML = 'Sending…';
+    helper.textContent = 'Your answer is being sent for AI evaluation.';
+    startSendTimer(); setHeight();
+  }
+  function unlockAfterResponse(clearDraft=false) {
+    isSending = false; pendingAutoSend = false;
+    send.disabled = false; mic.disabled = false;
+    send.innerHTML = 'Send answer <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path></svg>';
+    stopSendTimer();
+    if (clearDraft) {
+      answer.value = ''; audioBlob = null; chunks = [];
+      row.classList.remove('active'); duration.textContent = '00:00';
+      setStatus('');
+    }
+    if (streamlitArgs.helper_text) helper.textContent = String(streamlitArgs.helper_text);
+    else helper.textContent = 'Type your answer, or tap the microphone to speak.';
+    setHeight();
+  }
+  function makeEventId() {
+    eventCounter++;
+    return Date.now().toString(36)+'-'+eventCounter+'-'+Math.random().toString(36).slice(2);
+  }
+  async function postAudioAnswer() {
+    if (!audioBlob) { unlockAfterResponse(false); setStatus('No recording was captured. Try again or type your answer.'); return; }
+    if (audioBlob.size > 8*1024*1024) { unlockAfterResponse(false); setStatus('Recording is too large. Please record a shorter answer (under 90 seconds).'); return; }
+    if (audioBlob.size < 1000) { unlockAfterResponse(false); setStatus('Recording is empty or too short. Try again or type your answer.'); return; }
+    lockForSending(); helper.textContent = 'Preparing voice answer…';
+    try {
+      const buffer = await audioBlob.arrayBuffer();
+      const bytes = new Uint8Array(buffer); let binary = '';
+      const chunkSize = 0x8000;
+      for (let i=0;i<bytes.length;i+=chunkSize) binary += String.fromCharCode(...bytes.subarray(i,i+chunkSize));
+      activeEventId = makeEventId();
+      post('streamlit:setComponentValue', {value:{event_id:activeEventId,action:'send_audio',audio_b64:btoa(binary),mime_type:audioMime},dataType:'json'});
+      helper.textContent = 'Sending voice answer to Gemini for transcription and evaluation…';
+      setHeight();
+    } catch (err) {
+      activeEventId = '';
+      unlockAfterResponse(false);
+      setStatus('Could not prepare the recording. Please try again.');
+    }
+  }
+  async function sendCurrentAnswer() {
+    if (isSending || isRecording) return;
+    if (audioBlob) { await postAudioAnswer(); return; }
+    const text = answer.value.trim();
+    if (text.length < 2) { setStatus('Type an answer or record one before sending.'); return; }
+    lockForSending();
+    activeEventId = makeEventId();
+    post('streamlit:setComponentValue', {value:{event_id:activeEventId,action:'send_text',text:text.slice(0,3000)},dataType:'json'});
+    helper.textContent = 'Sending typed answer to Gemini for evaluation…';
+    setHeight();
+  }
+  async function startRecording() {
+    setStatus('');
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
+      setStatus('Voice recording is not supported in this browser. You can type your answer.'); return;
+    }
+    try {
+      mediaStream = await navigator.mediaDevices.getUserMedia({audio:true});
+      let mime = '';
+      for (const candidate of ['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/ogg;codecs=opus']) {
+        if (MediaRecorder.isTypeSupported(candidate)) { mime = candidate; break; }
+      }
+      mediaRecorder = mime ? new MediaRecorder(mediaStream,{mimeType:mime}) : new MediaRecorder(mediaStream);
+      audioMime = (mediaRecorder.mimeType || mime || 'audio/webm').split(';')[0];
+      chunks=[]; audioBlob=null; startedAt=Date.now(); isRecording=true; pendingAutoSend=false;
+      mediaRecorder.ondataavailable = ev => { if(ev.data && ev.data.size) chunks.push(ev.data); };
+      mediaRecorder.onstop = async () => {
+        audioBlob = new Blob(chunks,{type:audioMime});
+        stopTracks(); isRecording=false; setRecordingButton(false);
+        label.textContent='Recording ready';
+        const shouldSendNow = pendingAutoSend;
+        pendingAutoSend = false;
+        if (audioBlob.size > 8*1024*1024) {
+          audioBlob=null; row.classList.remove('active'); unlockAfterResponse(false);
+          setStatus('Recording is too large. Please record a shorter answer (under 90 seconds).');
+        } else if (audioBlob.size < 1000) {
+          audioBlob=null; row.classList.remove('active'); unlockAfterResponse(false);
+          setStatus('Recording is empty or too short. Try again or type your answer.');
+        } else {
+          helper.textContent = shouldSendNow ? 'Sending recorded answer…' : 'Voice is ready. Press Send answer to submit.';
+          setStatus(shouldSendNow ? '' : 'Voice recording ready — press Send answer.');
+          if (shouldSendNow) await sendCurrentAnswer();
+        }
+        setHeight();
+      };
+      mediaRecorder.start(250);
+      row.classList.add('active'); label.textContent='Recording'; setRecordingButton(true);
+      helper.textContent='Speak naturally. Press Send answer when you finish; recording will stop automatically.';
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      analyser=audioContext.createAnalyser(); analyser.fftSize=256;
+      audioContext.createMediaStreamSource(mediaStream).connect(analyser); drawWave();
+      durationTimer=setInterval(()=>{
+        duration.textContent=fmtTime((Date.now()-startedAt)/1000);
+        if(Date.now()-startedAt>90000 && mediaRecorder?.state==='recording') {
+          label.textContent='90-second limit reached'; mediaRecorder.stop();
+        }
+      },250);
+      setHeight();
+    } catch(err) {
+      stopTracks(); isRecording=false; setRecordingButton(false);
+      setStatus(err && err.name==='NotAllowedError' ? 'Microphone permission was denied. Allow microphone access in your browser, or type your answer.' : 'Could not start the microphone. Check browser permission and try again.');
+    }
+  }
+
+  mic.addEventListener('click', async () => {
+    if (isSending || pendingAutoSend) return;
+    if (isRecording) {
+      if (mediaRecorder && mediaRecorder.state==='recording') mediaRecorder.stop();
+    } else {
+      if (audioBlob) { audioBlob=null; row.classList.remove('active'); duration.textContent='00:00'; }
+      await startRecording();
+    }
+  });
+  send.addEventListener('click', async () => {
+    if (isSending) return;
+    setStatus('');
+    if (isRecording) {
+      // Sending while recording finalizes MediaRecorder, then immediately submits the blob.
+      pendingAutoSend = true;
+      send.disabled = true; mic.disabled = true;
+      helper.textContent = 'Finishing recording, then sending to AI…';
+      label.textContent = 'Finishing recording';
+      if (mediaRecorder && mediaRecorder.state==='recording') mediaRecorder.stop();
+      setHeight();
+      return;
+    }
+    await sendCurrentAnswer();
+  });
+
+  window.addEventListener('message', ev => {
+    const data = ev.data || {};
+    if (data.type === 'streamlit:render') {
+      streamlitArgs = data.args || {};
+      const doneEvent = String(streamlitArgs.completed_event_id || '');
+      // A regular fragment rerun may send render args while the AI request is still in flight.
+      // Only unlock after Python explicitly reports that this exact event was handled.
+      if (activeEventId && doneEvent && doneEvent === activeEventId) {
+        completedEventId = doneEvent;
+        activeEventId = '';
+        unlockAfterResponse(false); // preserve the draft after errors so it can be retried
+      } else if (!isSending && !pendingAutoSend) {
+        send.disabled = false; mic.disabled = false;
+      }
+      if (streamlitArgs.placeholder) answer.placeholder = String(streamlitArgs.placeholder);
+      if (Number(streamlitArgs.max_chars)>0) answer.maxLength = Number(streamlitArgs.max_chars);
+      if (!isSending && !isRecording && streamlitArgs.helper_text) helper.textContent = String(streamlitArgs.helper_text);
+      setHeight();
+    }
+  });
+  window.addEventListener('resize', () => { drawIdleWave(); setHeight(); });
+  answer.addEventListener('input', setHeight);
+  drawIdleWave(); setHeight();
+  post('streamlit:componentReady', {apiVersion:1});
+})();
+</script>
+</body>
+</html>

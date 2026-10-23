@@ -1,4 +1,5 @@
-streamlit
-pandas
-pymongo[srv]
-google-genai
+streamlit>=1.63.0
+pandas>=2.0.0
+pymongo[srv]>=4.6.0
+google-genai>=1.0.0
+pypdf>=5.0.0
