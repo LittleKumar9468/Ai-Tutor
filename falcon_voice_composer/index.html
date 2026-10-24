@@ -76,7 +76,7 @@ button:disabled{opacity:.58;cursor:wait}
   let mediaStream = null, mediaRecorder = null, chunks = [], audioBlob = null, audioMime = 'audio/webm';
   let audioContext = null, analyser = null, raf = 0, startedAt = 0, durationTimer = 0;
   let isRecording = false, pendingAutoSend = false, isSending = false, streamlitArgs = {};
-  let eventCounter = 0, activeEventId = '', sendStartedAt = 0, sendTimer = 0, completedEventId = '';
+  let eventCounter = 0, activeEventId = '', sendStartedAt = 0, sendTimer = 0;
 
   function post(type, extra={}) {
     window.parent.postMessage({isStreamlitMessage:true, type, ...extra}, '*');
@@ -90,8 +90,6 @@ button:disabled{opacity:.58;cursor:wait}
     const s = Math.max(0, Math.floor(sec));
     return String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
   }
-  // Measure the component's own content, never the document viewport. Measuring scrollHeight
-  // here can feed the iframe's previous height back into itself and cause endless growth.
   function autoResizeAnswer() {
     answer.style.height = 'auto';
     answer.style.height = Math.min(180, Math.max(92, answer.scrollHeight)) + 'px';
@@ -281,7 +279,6 @@ button:disabled{opacity:.58;cursor:wait}
     if (isSending) return;
     setStatus('');
     if (isRecording) {
-      // Sending while recording finalizes MediaRecorder, then immediately submits the blob.
       pendingAutoSend = true;
       send.disabled = true; mic.disabled = true;
       helper.textContent = 'Finishing recording, then sending to AI…';
@@ -298,12 +295,9 @@ button:disabled{opacity:.58;cursor:wait}
     if (data.type === 'streamlit:render') {
       streamlitArgs = data.args || {};
       const doneEvent = String(streamlitArgs.completed_event_id || '');
-      // A regular fragment rerun may send render args while the AI request is still in flight.
-      // Only unlock after Python explicitly reports that this exact event was handled.
       if (activeEventId && doneEvent && doneEvent === activeEventId) {
-        completedEventId = doneEvent;
         activeEventId = '';
-        unlockAfterResponse(false); // preserve the draft after errors so it can be retried
+        unlockAfterResponse(false);
       } else if (!isSending && !pendingAutoSend) {
         send.disabled = false; mic.disabled = false;
       }
@@ -313,7 +307,14 @@ button:disabled{opacity:.58;cursor:wait}
       setHeight();
     }
   });
-  window.addEventListener('resize', () => { drawIdleWave(); setHeight(); });
+  let lastWindowWidth = window.innerWidth;
+  window.addEventListener('resize', () => {
+    if (window.innerWidth !== lastWindowWidth) {
+      lastWindowWidth = window.innerWidth;
+      drawIdleWave();
+      setHeight();
+    }
+  });
   answer.addEventListener('input', setHeight);
   drawIdleWave(); setHeight();
   post('streamlit:componentReady', {apiVersion:1});
